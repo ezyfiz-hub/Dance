@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>YOUR DANCE FLOOR - Gift More Dance More</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* Tetapan Viewport Tanpa Scrollbar */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden !important;
+      background-color: #030308;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Canvas Skrin Penuh */
+    #laserCanvas, #crowdCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #laserCanvas { z-index: 5; }
+    #crowdCanvas { z-index: 15; }
+
+    /* Tipografi & Saiz Dinamik Menggunakan clamp() */
+    .text-fluid-title {
+      font-size: clamp(1.2rem, 3.5vw + 0.2rem, 2.8rem);
+    }
+    .text-fluid-sub {
+      font-size: clamp(0.65rem, 1.2vw, 0.95rem);
+    }
+    .text-fluid-body {
+      font-size: clamp(0.6rem, 0.8vw + 0.15rem, 0.85rem);
+    }
+
+    /* Panel Kaca Glassmorphism */
+    .glass-card {
+      background: rgba(10, 10, 24, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* Animasi Pergerakan DJ */
+    @keyframes djBounce {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3%) scale(1.02); }
+    }
+    .dj-anim {
+      animation: djBounce 0.4s infinite ease-in-out;
+    }
+
+    @keyframes djDrop {
+      0% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.1) rotate(-3deg); }
+      75% { transform: scale(1.1) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .dj-drop-active {
+      animation: djDrop 0.18s infinite ease-in-out !important;
+    }
+
+    /* Pop-up Hadiah & Fan Club */
+    .gift-pop {
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.4s ease 3.2s forwards;
+    }
+    @keyframes popIn {
+      from { transform: translateY(20px) scale(0.7); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(-15px); }
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="w-full h-full relative text-white overflow-hidden select-none">
+
+  <!-- LAPISAN CANVAS EFEK PENTAS & PENONTON -->
+  <canvas id="laserCanvas"></canvas>
+  <canvas id="crowdCanvas"></canvas>
+
+  <!-- LATAR BELAKANG PENTAS KELAB -->
+  <div class="absolute inset-0 z-0 bg-gradient-to-b from-purple-950 via-slate-950 to-black overflow-hidden flex flex-col justify-between p-0 m-0">
+    <!-- Equalizer Atas Pentas -->
+    <div class="w-full h-[8vh] opacity-25 flex items-end justify-between px-2" id="topEqualizer"></div>
+
+    <!-- PENTAS UTAMA DJ -->
+    <div class="relative z-10 flex flex-col items-center justify-start mt-2 mb-auto">
+      
+      <!-- Banner Live Text -->
+      <div class="mb-1 px-3 py-0.5 rounded-full glass-card border border-pink-500/50 text-center animate-pulse">
+        <span class="text-fluid-body font-extrabold tracking-wider text-pink-300">
+          CHAT: TAIP <span class="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-400">"1"</span> UNTUK MASUK DANCE FLOOR!
+        </span>
+      </div>
+
+      <!-- Konsol DJ Booth -->
+      <div class="relative w-[min(70vw,310px)] aspect-[16/8] flex flex-col items-center justify-end">
+        
+        <!-- Karakter DJ -->
+        <div id="djAvatar" class="dj-anim z-10 relative flex flex-col items-center -mb-2">
+          <div class="w-10 h-5 border-t-4 border-x-4 border-slate-800 rounded-t-full absolute -top-1.5 z-20"></div>
+          <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-purple-600 via-pink-500 to-amber-400 border border-white/80 shadow-[0_0_15px_rgba(236,72,153,0.8)] relative flex items-center justify-center overflow-hidden">
+            <div class="w-8 h-3.5 bg-black/90 rounded border border-cyan-400 flex items-center justify-center text-[7px] font-black text-cyan-300">
+              LIVE DJ
+            </div>
+          </div>
+          <div class="w-16 h-8 bg-slate-900 rounded-t-2xl border-t-2 border-pink-500 flex items-center justify-center shadow-lg relative">
+            <i class="fa-solid fa-compact-disc text-lg text-pink-400 animate-spin"></i>
+          </div>
+        </div>
+
+        <!-- Meja DJ Console & Audio Visualizer -->
+        <div class="w-full h-14 md:h-16 glass-card rounded-xl border-t-2 border-cyan-400 p-1.5 flex flex-col justify-between shadow-[0_0_20px_rgba(34,211,238,0.3)] z-20">
+          <div class="flex justify-between items-center px-1">
+            <div class="flex space-x-1 items-center">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              <span class="text-[9px] font-orbitron text-cyan-300 tracking-wider font-bold" id="audioModeLabel">EDM SYNTH BEAT</span>
+            </div>
+            <div class="text-[9px] font-mono font-bold text-pink-400" id="bpmDisplay">128 BPM</div>
+          </div>
+          
+          <!-- Spectrum Equalizer -->
+          <div class="w-full h-5 bg-slate-950/90 rounded flex items-center justify-center space-x-1 px-1 border border-slate-800 overflow-hidden" id="deckVisualizer"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Ruang Lantai Tarian -->
+    <div class="h-[52vh] w-full"></div>
+  </div>
+
+  <!-- HUD OVERLAY (TOP BAR, RANKING & KAWALAN AUDIO/GIFT) -->
+  <div class="absolute inset-0 z-30 pointer-events-none p-1.5 md:p-3 flex flex-col justify-between h-full w-full max-h-[100vh]">
+    
+    <!-- HEADER BAR: TAJUK, TIMER & RANKING PEMBERI GIFT -->
+    <div class="flex justify-between items-start w-full gap-1.5">
+      
+      <!-- Info Permainan & Pemasa Reset -->
+      <div class="glass-card p-1.5 md:p-2.5 rounded-xl border border-white/10 flex flex-col gap-0.5 pointer-events-auto max-w-[48vw]">
+        <div class="flex items-center space-x-1.5">
+          <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+          <h1 class="font-orbitron font-extrabold text-fluid-body tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-cyan-300">
+            YOUR DANCE FLOOR
+          </h1>
+        </div>
+        
+        <div class="flex items-center space-x-2 text-[10px] md:text-xs text-slate-300">
+          <div>
+            <span class="text-slate-400">Penari:</span>
+            <span class="text-cyan-400 font-bold font-orbitron" id="crowdCount">0</span>
+          </div>
+          <div class="h-2.5 w-[1px] bg-white/20"></div>
+          <div>
+            <span class="text-slate-400">Reset:</span>
+            <span class="text-yellow-400 font-bold font-orbitron" id="hourlyTimer">59:59</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RANKING PEMBERI GIFT TERTINGGI -->
+      <div class="glass-card p-1.5 md:p-2.5 rounded-xl border border-yellow-500/40 pointer-events-auto w-[48vw] max-w-[240px] flex flex-col gap-0.5 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
+        <div class="flex justify-between items-center text-[10px] md:text-xs font-bold text-yellow-400 border-b border-white/10 pb-0.5">
+          <span><i class="fa-solid fa-trophy mr-1 text-amber-400"></i> TOP RANKING</span>
+          <span class="text-[9px] text-slate-400 font-mono">HOURLY</span>
+        </div>
+        
+        <!-- Senarai Ranking -->
+        <div id="rankingList" class="space-y-0.5 text-[10px] md:text-xs max-h-[9vh] overflow-y-auto no-scrollbar font-mono">
+          <div class="text-slate-400 text-center py-0.5 text-[9px] italic">Belum ada donasi...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RUANG POP-UP HADIAH (TENGAH) -->
+    <div id="giftAlertContainer" class="flex flex-col space-y-1 w-full items-end max-w-xs ml-auto pointer-events-none"></div>
+
+    <!-- KAWALAN BTM: PANEL AUDIO & SIMULASI GIFT -->
+    <div class="flex flex-col md:flex-row justify-between items-end gap-1.5 w-full mt-auto">
+      
+      <!-- PANEL KAWALAN AUDIO BGM (ON/OFF & UPLOAD MP3) -->
+      <div class="glass-card p-2 rounded-xl w-full md:w-1/2 border border-purple-500/40 space-y-1.5 pointer-events-auto">
+        <div class="flex justify-between items-center border-b border-white/10 pb-1 text-[10px] md:text-xs font-bold text-purple-300">
+          <span><i class="fa-solid fa-compact-disc mr-1 text-pink-400 animate-spin"></i> KAWALAN AUDIO</span>
+          <span class="text-[9px] text-slate-400 font-mono" id="audioSourceText">Mod: Synth Beat</span>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <!-- Butang Audio ON/OFF -->
+          <button id="audioToggleBtn" onclick="toggleAudioPower()" class="w-1/2 py-1.5 px-2 rounded-lg font-bold text-[10px] md:text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30 transition flex items-center justify-center gap-1 shadow">
+            <i class="fa-solid fa-volume-high" id="audioIcon"></i>
+            <span id="audioBtnText">AUDIO: ON</span>
+          </button>
+
+          <!-- Input Muat Naik Fail MP3 -->
+          <button onclick="triggerFileInput()" class="w-1/2 py-1.5 px-2 rounded-lg font-bold text-[10px] md:text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/50 transition flex items-center justify-center gap-1 shadow text-center truncate">
+            <i class="fa-solid fa-file-audio text-pink-400"></i>
+            <span id="uploadLabelText">MUAT NAIK MP3</span>
+          </button>
+          <input type="file" id="mp3Uploader" accept="audio/*" class="hidden" onchange="handleMP3Upload(event)">
+        </div>
+      </div>
+
+      <!-- PANEL INPUT CHAT & BUTTON GIFT / FAN CLUB -->
+      <div class="glass-card p-2 rounded-xl w-full md:w-1/2 border border-cyan-500/40 space-y-1.5 pointer-events-auto">
+        
+        <!-- Ruang Input Sembang / Taip "1" -->
+        <div class="flex gap-1.5">
+          <input type="text" id="simUsername" placeholder="Nama User" value="Penari_Guest" class="w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] md:text-xs text-cyan-300 focus:outline-none focus:border-cyan-400">
+          <input type="text" id="simChatMessage" placeholder="Taip 1 atau mesej..." value="1" class="w-2/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] md:text-xs text-white focus:outline-none focus:border-pink-500">
+          <button onclick="submitSimChat()" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:brightness-110 px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-xs shadow text-white transition active:scale-95 flex items-center justify-center min-w-[40px]">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+
+        <!-- Touch Controls / Butang Gift & Orange Heart Fan Club -->
+        <div class="grid grid-cols-5 gap-1 pt-0.5 border-t border-white/10">
+          <button onclick="quickSendChat('1')" class="bg-slate-800 hover:bg-slate-700 border border-pink-500/50 py-1.5 rounded-lg text-[10px] md:text-xs font-bold text-pink-300 transition active:scale-95 flex flex-col items-center justify-center">
+            <i class="fa-solid fa-person-dancing text-xs"></i>
+            <span class="text-[8px] mt-0.5">Taip "1"</span>
+          </button>
+
+          <!-- BUTANG FAN CLUB LOVE OREN -->
+          <button onclick="triggerOrangeHeartSim()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-110 py-1.5 rounded-lg text-[10px] md:text-xs font-bold text-white transition active:scale-95 flex flex-col items-center justify-center shadow border border-amber-300/60">
+            <i class="fa-solid fa-heart text-xs text-amber-100 animate-pulse"></i>
+            <span class="text-[8px] mt-0.5">Love Oren</span>
+          </button>
+          
+          <button onclick="triggerGiftSim('Rose', 1)" class="bg-gradient-to-r from-rose-600 to-pink-500 py-1.5 rounded-lg text-[10px] md:text-xs font-bold text-white transition active:scale-95 flex flex-col items-center justify-center shadow">
+            <i class="fa-solid fa-rose text-xs text-rose-200"></i>
+            <span class="text-[8px] mt-0.5">Rose (1)</span>
+          </button>
+
+          <button onclick="triggerGiftSim('Disco Ball', 100)" class="bg-gradient-to-r from-purple-600 to-indigo-600 py-1.5 rounded-lg text-[10px] md:text-xs font-bold text-white transition active:scale-95 flex flex-col items-center justify-center shadow">
+            <i class="fa-solid fa-compact-disc text-xs text-cyan-200"></i>
+            <span class="text-[8px] mt-0.5">Disco (100)</span>
+          </button>
+
+          <button onclick="triggerGiftSim('Sultan Rocket', 1000)" class="bg-gradient-to-r from-amber-500 to-yellow-600 py-1.5 rounded-lg text-[10px] md:text-xs font-bold text-white transition active:scale-95 flex flex-col items-center justify-center shadow">
+            <i class="fa-solid fa-rocket text-xs text-yellow-100"></i>
+            <span class="text-[8px] mt-0.5">Sultan (1k)</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SKRIN PEMBUKAAN (START OVERLAY) -->
+  <div id="startScreen" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-3 text-center">
+    <div class="max-w-sm w-full glass-card p-4 rounded-2xl border border-pink-500/40 shadow-[0_0_30px_rgba(236,72,153,0.3)] space-y-3">
+      
+      <!-- Logo / Tajuk Game -->
+      <div class="space-y-0.5">
+        <div class="inline-block px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-orbitron text-[9px] tracking-widest border border-pink-500/40">
+          INTERACTIVE TIKTOK LIVE GAME
+        </div>
+        <h1 class="text-fluid-title font-orbitron font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 tracking-wider">
+          YOUR DANCE FLOOR
+        </h1>
+        <p class="text-fluid-sub text-cyan-300 font-bold uppercase tracking-widest">
+          GIFT MORE DANCE MORE
+        </p>
+      </div>
+
+      <!-- Arahan Ringkas -->
+      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-white/10 text-fluid-body text-slate-300 text-left space-y-1.5">
+        <div class="font-bold text-white flex items-center text-[11px]">
+          <i class="fa-solid fa-circle-info mr-1.5 text-cyan-400"></i> Arahan Permainan:
+        </div>
+        <ul class="list-disc list-inside space-y-0.5 text-slate-400 text-[10px]">
+          <li>Taip <b class="text-pink-400">"1"</b> di chat untuk masuk & menari di hadapan DJ.</li>
+          <li>Hantar <b class="text-orange-400">LOVE OREN</b> untuk lencana VIP dengan tulisan <b>"VIP"</b> pada badan avatar!</li>
+          <li><b>RAMAI PENONTON & GIFTER:</b> Semua penonton kekal sehingga <b>25-30 MINIT</b> tanpa dikurangkan!</li>
+        </ul>
+      </div>
+
+      <!-- Butang Mula Permainan -->
+      <button onclick="startGame()" class="w-full py-2.5 bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 rounded-xl font-orbitron font-black text-fluid-sub text-white shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:scale-105 active:scale-95 transition">
+        <i class="fa-solid fa-play mr-1.5"></i> MULA PERMAINAN
+      </button>
+
+    </div>
+  </div>
+
+  <!-- AUDIO ELEMENT HIDDEN BACKUP -->
+  <audio id="html5AudioPlayer" loop class="hidden"></audio>
+
+  <!-- ENGINE PERMAINAN & AUDIO ENGINE -->
+  <script>
+    /* ========================================================================
+       1. GAME STATE
+       ======================================================================== */
+    const state = {
+      crowd: [],
+      lasers: [],
+      rankings: {},
+      bpm: 128,
+      isBassDrop: false,
+      bassDropTimer: null,
+      audioPowered: true,
+      audioMode: 'synth', // 'synth' atau 'mp3'
+      gameTimerSeconds: 3600,
+      audioBoostTimer: null,
+      volumeBoostMultiplier: 1.0,
+      fanClubActive: false,
+      fanClubTimer: null
+    };
+
+    const avatarStyles3D = [
+      { name: 'Neon Raver', bodyColor: '#10b981', headColor: '#f43f5e', hairColor: '#38bdf8' },
+      { name: 'Disco Queen', bodyColor: '#ec4899', headColor: '#fbbf24', hairColor: '#a855f7' },
+      { name: 'Cyber Dancer', bodyColor: '#3b82f6', headColor: '#a855f7', hairColor: '#facc15' },
+      { name: 'Sultan Gold', bodyColor: '#eab308', headColor: '#f97316', hairColor: '#ffffff' }
+    ];
+
+    /* ========================================================================
+       2. CANVAS FULLSCREEN RESIZE ENGINE
+       ======================================================================== */
+    const laserCanvas = document.getElementById('laserCanvas');
+    const laserCtx = laserCanvas.getContext('2d');
+    const crowdCanvas = document.getElementById('crowdCanvas');
+    const crowdCtx = crowdCanvas.getContext('2d');
+
+    function resizeViewport() {
+      laserCanvas.width = window.innerWidth;
+      laserCanvas.height = window.innerHeight;
+      crowdCanvas.width = window.innerWidth;
+      crowdCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeViewport);
+    window.addEventListener('orientationchange', resizeViewport);
+    resizeViewport();
+
+    /* ========================================================================
+       3. ADVANCED AUDIO ENGINE
+       ======================================================================== */
+    let audioCtx = null;
+    let synthInterval = null;
+    const html5Audio = document.getElementById('html5AudioPlayer');
+
+    function initAudioEngine() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playKick(time) {
+      if (!state.audioPowered || state.audioMode !== 'synth' || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.frequency.setValueAtTime(140, time);
+      osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.14);
+
+      const vol = Math.min(1.0, 0.8 * state.volumeBoostMultiplier);
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.14);
+
+      osc.start(time);
+      osc.stop(time + 0.14);
+    }
+
+    function playSynthNote(time, freq) {
+      if (!state.audioPowered || state.audioMode !== 'synth' || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const vol = Math.min(0.6, 0.2 * state.volumeBoostMultiplier);
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.18);
+
+      osc.start(time);
+      osc.stop(time + 0.18);
+    }
+
+    function startSynthLoop() {
+      if (synthInterval) clearInterval(synthInterval);
+      let step = 0;
+      const freqs = [110, 110, 130, 98, 110, 146, 130, 98];
+
+      synthInterval = setInterval(() => {
+        if (!state.audioPowered || state.audioMode !== 'synth' || !audioCtx) return;
+        const now = audioCtx.currentTime;
+        if (step % 2 === 0) playKick(now);
+        playSynthNote(now, freqs[step % freqs.length] * (state.isBassDrop ? 1.25 : 1));
+        step++;
+      }, state.isBassDrop ? 120 : 160);
+    }
+
+    function triggerFileInput() {
+      document.getElementById('mp3Uploader').click();
+    }
+
+    function handleMP3Upload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      initAudioEngine();
+      document.getElementById('uploadLabelText').innerText = file.name.substring(0, 10) + '...';
+
+      const fileURL = URL.createObjectURL(file);
+      html5Audio.src = fileURL;
+      state.audioMode = 'mp3';
+      
+      document.getElementById('audioSourceText').innerText = 'Mod: MP3 Lagu';
+      document.getElementById('audioModeLabel').innerText = 'CUSTOM MP3 TRACK';
+
+      if (state.audioPowered) {
+        html5Audio.volume = 0.7;
+        html5Audio.play().catch(e => console.log('Audio play error:', e));
+      }
+    }
+
+    function toggleAudioPower() {
+      state.audioPowered = !state.audioPowered;
+      const btnText = document.getElementById('audioBtnText');
+      const icon = document.getElementById('audioIcon');
+      const btn = document.getElementById('audioToggleBtn');
+
+      if (state.audioPowered) {
+        btnText.innerText = 'AUDIO: ON';
+        icon.className = 'fa-solid fa-volume-high';
+        btn.className = 'w-1/2 py-1.5 px-2 rounded-lg font-bold text-[10px] md:text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30 transition flex items-center justify-center gap-1 shadow';
+        
+        if (state.audioMode === 'mp3' && html5Audio.src) {
+          html5Audio.play();
+        }
+      } else {
+        btnText.innerText = 'AUDIO: OFF';
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.className = 'w-1/2 py-1.5 px-2 rounded-lg font-bold text-[10px] md:text-xs bg-rose-500/20 text-rose-300 border border-rose-500/50 hover:bg-rose-500/30 transition flex items-center justify-center gap-1 shadow';
+        
+        if (state.audioMode === 'mp3') {
+          html5Audio.pause();
+        }
+      }
+    }
+
+    function triggerAudioVolumeBoost() {
+      state.volumeBoostMultiplier = 1.8;
+      if (state.audioMode === 'mp3' && html5Audio) {
+        html5Audio.volume = 1.0;
+      }
+
+      if (state.audioBoostTimer) clearTimeout(state.audioBoostTimer);
+
+      state.audioBoostTimer = setTimeout(() => {
+        state.volumeBoostMultiplier = 1.0;
+        if (state.audioMode === 'mp3' && html5Audio) {
+          html5Audio.volume = 0.7;
+        }
+      }, 1800);
+    }
+
+    /* ========================================================================
+       4. LASER LIGHTING ENGINE & SPECIAL STAGE FAN CLUB LIGHTING
+       ======================================================================== */
+    const laserColors = ['#ff007f', '#00f3ff', '#a855f7', '#facc15', '#3b82f6'];
+    for (let i = 0; i < 12; i++) {
+      state.lasers.push({
+        x: (window.innerWidth / 12) * i + 15,
+        y: window.innerHeight * 0.08,
+        angle: Math.random() * Math.PI,
+        speed: (Math.random() - 0.5) * 0.035,
+        color: laserColors[i % laserColors.length],
+        width: Math.random() * 4 + 2
+      });
+    }
+
+    function triggerFanClubStageEffect() {
+      state.fanClubActive = true;
+      if (state.fanClubTimer) clearTimeout(state.fanClubTimer);
+
+      state.fanClubTimer = setTimeout(() => {
+        state.fanClubActive = false;
+      }, 3500);
+    }
+
+    function drawLasers() {
+      laserCtx.clearRect(0, 0, laserCanvas.width, laserCanvas.height);
+
+      if (state.fanClubActive) {
+        laserCtx.fillStyle = `rgba(249, 115, 22, ${Math.random() * 0.35 + 0.1})`;
+        laserCtx.fillRect(0, 0, laserCanvas.width, laserCanvas.height);
+      } else if (state.isBassDrop) {
+        laserCtx.fillStyle = `rgba(${Math.random()*255}, 0, ${Math.random()*255}, 0.18)`;
+        laserCtx.fillRect(0, 0, laserCanvas.width, laserCanvas.height);
+      }
+
+      state.lasers.forEach((laser) => {
+        laser.angle += laser.speed;
+        if (laser.angle > Math.PI * 0.85 || laser.angle < Math.PI * 0.15) {
+          laser.speed = -laser.speed;
+        }
+
+        const targetX = laser.x + Math.cos(laser.angle) * laserCanvas.height * 1.3;
+        const targetY = laser.y + Math.sin(laser.angle) * laserCanvas.height * 1.3;
+
+        const gradient = laserCtx.createLinearGradient(laser.x, laser.y, targetX, targetY);
+        const currentColor = state.fanClubActive ? '#f97316' : laser.color;
+        gradient.addColorStop(0, currentColor);
+        gradient.addColorStop(1, 'transparent');
+
+        laserCtx.beginPath();
+        laserCtx.moveTo(laser.x, laser.y);
+        laserCtx.lineTo(targetX, targetY);
+        laserCtx.strokeStyle = gradient;
+        laserCtx.lineWidth = (state.isBassDrop || state.fanClubActive) ? laser.width * 2.8 : laser.width;
+        laserCtx.shadowBlur = 15;
+        laserCtx.shadowColor = currentColor;
+        laserCtx.stroke();
+        laserCtx.shadowBlur = 0;
+      });
+
+      requestAnimationFrame(drawLasers);
+    }
+
+    /* ========================================================================
+       5. AVATAR 3D CROWD SYSTEM (Kekal 25 - 30 Minit & Ramai Penonton)
+       ======================================================================== */
+    class Avatar3D {
+      constructor(username, isVip = false, initialMessage = "", isFanClub = false) {
+        this.username = username;
+        this.isVip = isVip;
+        this.isFanClub = isFanClub;
+        this.x = Math.random() * (crowdCanvas.width - 60) + 30;
+        
+        this.baseYMin = crowdCanvas.height * 0.38;
+        this.baseYMax = crowdCanvas.height * 0.72;
+        
+        this.baseY = Math.random() * (this.baseYMax - this.baseYMin) + this.baseYMin;
+        this.y = this.baseY;
+        this.targetY = this.baseY;
+        
+        this.baseSize = isVip ? 24 : 18; 
+        this.size = this.baseSize;
+        this.targetSize = this.baseSize;
+
+        this.style = avatarStyles3D[Math.floor(Math.random() * avatarStyles3D.length)];
+        this.bounceSpeed = 0.08 + Math.random() * 0.04;
+        this.bounceAngle = Math.random() * Math.PI * 2;
+        this.wings = isVip;
+        this.message = initialMessage;
+        this.messageTimer = initialMessage ? 180 : 0;
+
+        this.shrinkTimer = null;
+        this.shrinkInterval = null;
+      }
+
+      setMessage(msg) {
+        this.message = msg;
+        this.messageTimer = 180;
+      }
+
+      // Pembesaran & Pengecilan Bertahap (25 HINGGA 30 MINIT)
+      growAvatar(coinValue) {
+        const growthStep = Math.min(22, Math.max(5, coinValue * 0.12));
+        this.targetSize = Math.min(68, this.targetSize + growthStep);
+
+        const approachStep = Math.min(80, Math.max(15, coinValue * 0.4));
+        this.targetY = Math.max(this.baseYMin, this.y - approachStep);
+
+        if (this.shrinkTimer) clearTimeout(this.shrinkTimer);
+        if (this.shrinkInterval) clearInterval(this.shrinkInterval);
+
+        // Tempoh pengekalan saiz besar: 25 Minit (1,500,000 ms) hingga 30 Minit (1,800,000 ms)
+        const holdDuration = Math.floor(Math.random() * 300000) + 1500000; 
+
+        this.shrinkTimer = setTimeout(() => {
+          this.shrinkInterval = setInterval(() => {
+            let needsDecay = false;
+            
+            if (this.targetSize > this.baseSize) {
+              this.targetSize -= 1;
+              needsDecay = true;
+            } else {
+              this.targetSize = this.baseSize;
+            }
+
+            if (this.targetY < this.baseY) {
+              this.targetY += 2;
+              needsDecay = true;
+            } else {
+              this.targetY = this.baseY;
+            }
+
+            if (!needsDecay) {
+              clearInterval(this.shrinkInterval);
+            }
+          }, 500); // mengecil perlahan setiap 0.5 saat
+        }, holdDuration);
+      }
+
+      update() {
+        const currentBpm = state.isBassDrop ? state.bpm * 1.5 : state.bpm;
+        this.bounceAngle += this.bounceSpeed * (currentBpm / 120);
+        
+        const bounceOffset = Math.sin(this.bounceAngle) * (this.isVip ? 12 : 7);
+        this.y = this.targetY + bounceOffset;
+
+        this.size += (this.targetSize - this.size) * 0.1;
+
+        if (this.messageTimer > 0) this.messageTimer--;
+      }
+
+      draw() {
+        crowdCtx.save();
+        crowdCtx.translate(this.x, this.y);
+
+        // Sayap Neon VIP
+        if (this.wings) {
+          const wingGrad = crowdCtx.createRadialGradient(0, 0, 2, 0, 0, this.size * 1.6);
+          wingGrad.addColorStop(0, this.isFanClub ? 'rgba(249, 115, 22, 0.9)' : 'rgba(250, 204, 21, 0.9)');
+          wingGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.6)');
+          wingGrad.addColorStop(1, 'transparent');
+
+          crowdCtx.fillStyle = wingGrad;
+          crowdCtx.shadowBlur = 12;
+          crowdCtx.shadowColor = this.isFanClub ? '#f97316' : '#facc15';
+
+          crowdCtx.beginPath();
+          crowdCtx.ellipse(-this.size * 0.8, -this.size * 0.2, this.size, this.size * 0.35, -Math.PI / 4, 0, Math.PI * 2);
+          crowdCtx.fill();
+          crowdCtx.beginPath();
+          crowdCtx.ellipse(this.size * 0.8, -this.size * 0.2, this.size, this.size * 0.35, Math.PI / 4, 0, Math.PI * 2);
+          crowdCtx.fill();
+        }
+
+        // Badan Avatar
+        const bodyGrad = crowdCtx.createLinearGradient(0, 0, 0, this.size * 1.4);
+        bodyGrad.addColorStop(0, this.isFanClub ? '#f97316' : this.style.bodyColor);
+        bodyGrad.addColorStop(1, '#090d16');
+
+        crowdCtx.beginPath();
+        crowdCtx.roundRect(-this.size * 0.6, this.size * 0.35, this.size * 1.2, this.size * 1.1, [10, 10, 0, 0]);
+        crowdCtx.fillStyle = bodyGrad;
+        crowdCtx.fill();
+
+        // TULISAN "VIP" PADA BADAN AVATAR FAN CLUB
+        if (this.isFanClub) {
+          crowdCtx.fillStyle = '#ffffff';
+          crowdCtx.font = `black ${Math.max(8, Math.floor(this.size * 0.45))}px Orbitron`;
+          crowdCtx.textAlign = 'center';
+          crowdCtx.shadowBlur = 4;
+          crowdCtx.shadowColor = '#000000';
+          crowdCtx.fillText('VIP', 0, this.size * 0.95);
+        }
+
+        // Kepala 3D
+        const headGrad = crowdCtx.createRadialGradient(-this.size * 0.2, -this.size * 0.2, 2, 0, 0, this.size);
+        headGrad.addColorStop(0, '#ffffff');
+        headGrad.addColorStop(0.4, this.isFanClub ? '#f97316' : this.style.headColor);
+        headGrad.addColorStop(1, '#020617');
+
+        crowdCtx.beginPath();
+        crowdCtx.arc(0, 0, this.size, 0, Math.PI * 2);
+        crowdCtx.fillStyle = headGrad;
+        crowdCtx.shadowBlur = (this.isVip || this.isFanClub) ? 18 : 5;
+        crowdCtx.shadowColor = this.isFanClub ? '#f97316' : this.style.headColor;
+        crowdCtx.fill();
+        crowdCtx.lineWidth = 1.2;
+        crowdCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        crowdCtx.stroke();
+
+        // Rambut
+        crowdCtx.beginPath();
+        crowdCtx.arc(0, -this.size * 0.25, this.size * 0.9, Math.PI, Math.PI * 2);
+        crowdCtx.fillStyle = this.style.hairColor;
+        crowdCtx.fill();
+
+        // Cermin Mata LED Neon
+        crowdCtx.fillStyle = '#020617';
+        crowdCtx.beginPath();
+        crowdCtx.roundRect(-this.size * 0.55, -this.size * 0.2, this.size * 1.1, this.size * 0.35, 3);
+        crowdCtx.fill();
+        
+        crowdCtx.fillStyle = this.isFanClub ? '#fbbf24' : '#00f3ff';
+        crowdCtx.shadowBlur = 5;
+        crowdCtx.shadowColor = this.isFanClub ? '#fbbf24' : '#00f3ff';
+        crowdCtx.fillRect(-this.size * 0.45, -this.size * 0.15, this.size * 0.38, this.size * 0.2);
+        crowdCtx.fillRect(this.size * 0.07, -this.size * 0.15, this.size * 0.38, this.size * 0.2);
+
+        // Muka Senyum
+        crowdCtx.beginPath();
+        crowdCtx.arc(0, this.size * 0.25, this.size * 0.28, 0, Math.PI);
+        crowdCtx.strokeStyle = '#ffffff';
+        crowdCtx.lineWidth = 1.2;
+        crowdCtx.stroke();
+
+        // Lencana Love Oren
+        if (this.isFanClub) {
+          crowdCtx.save();
+          crowdCtx.translate(this.size * 0.5, -this.size * 0.6);
+          
+          crowdCtx.fillStyle = '#f97316';
+          crowdCtx.shadowBlur = 8;
+          crowdCtx.shadowColor = '#f97316';
+          crowdCtx.beginPath();
+          crowdCtx.arc(0, 0, 9, 0, Math.PI * 2);
+          crowdCtx.fill();
+          crowdCtx.strokeStyle = '#ffffff';
+          crowdCtx.lineWidth = 1;
+          crowdCtx.stroke();
+
+          crowdCtx.fillStyle = '#ffffff';
+          crowdCtx.font = '9px FontAwesome';
+          crowdCtx.textAlign = 'center';
+          crowdCtx.fillText('🧡', 0, 3);
+          crowdCtx.restore();
+        }
+
+        // Nama User
+        crowdCtx.font = `${(this.isVip || this.isFanClub) ? 'bold 11px' : '9px'} Plus Jakarta Sans`;
+        crowdCtx.fillStyle = this.isFanClub ? '#f97316' : (this.isVip ? '#facc15' : '#ffffff');
+        crowdCtx.textAlign = 'center';
+        crowdCtx.shadowBlur = 4;
+        crowdCtx.shadowColor = '#000';
+        
+        const displayName = (this.isFanClub ? '🧡 ' : '') + this.username.substring(0, 10);
+        crowdCtx.fillText(displayName, 0, this.size * 1.4 + 8);
+
+        // Gelembung Dialog Chat
+        if (this.messageTimer > 0 && this.message) {
+          crowdCtx.font = 'bold 11px Plus Jakarta Sans';
+          const textWidth = crowdCtx.measureText(this.message).width;
+          const boxWidth = Math.max(textWidth + 14, 30);
+          const boxHeight = 20;
+          const boxY = -this.size - 28;
+
+          crowdCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+          crowdCtx.shadowBlur = 8;
+          crowdCtx.shadowColor = this.isFanClub ? '#f97316' : '#00f3ff';
+          crowdCtx.beginPath();
+          crowdCtx.roundRect(-boxWidth / 2, boxY, boxWidth, boxHeight, 6);
+          crowdCtx.fill();
+
+          crowdCtx.beginPath();
+          crowdCtx.moveTo(-3, boxY + boxHeight);
+          crowdCtx.lineTo(3, boxY + boxHeight);
+          crowdCtx.lineTo(0, boxY + boxHeight + 5);
+          crowdCtx.closePath();
+          crowdCtx.fill();
+
+          crowdCtx.fillStyle = '#090d16';
+          crowdCtx.shadowBlur = 0;
+          crowdCtx.fillText(this.message, 0, boxY + 14);
+        }
+
+        crowdCtx.restore();
+      }
+    }
+
+    // Isih kedalaman supaya avatar yang lebih dekat dilukis di atas (Mampu menampung sehingga 250 orang)
+    function drawCrowd() {
+      crowdCtx.clearRect(0, 0, crowdCanvas.width, crowdCanvas.height);
+      
+      state.crowd.sort((a, b) => a.y - b.y);
+
+      state.crowd.forEach(avatar => {
+        avatar.update();
+        avatar.draw();
+      });
+      requestAnimationFrame(drawCrowd);
+    }
+
+    /* ==========================================================================
+       6. CHAT, GIFT, FAN CLUB & RANKING HANDLERS
+       ========================================================================== */
+    function handleUserChat(username, message) {
+      let avatar = state.crowd.find(a => a.username.toLowerCase() === username.toLowerCase());
+
+      if (!avatar) {
+        // Ditingkatkan ke 250 orang maksimum tanpa kerap mengurangkan penonton
+        if (state.crowd.length > 250) state.crowd.shift();
+        avatar = new Avatar3D(username, false, message);
+        state.crowd.push(avatar);
+        document.getElementById('crowdCount').innerText = state.crowd.length;
+      } else {
+        avatar.setMessage(message);
+      }
+
+      if (message.trim() === '1') {
+        avatar.bounceAngle += 0.5;
+      }
+    }
+
+    function triggerOrangeHeartEvent(senderName) {
+      let senderAvatar = state.crowd.find(a => a.username === senderName);
+      
+      if (!senderAvatar) {
+        senderAvatar = new Avatar3D(senderName, true, 'Joined Fan Club! 🧡', true);
+        state.crowd.push(senderAvatar);
+        document.getElementById('crowdCount').innerText = state.crowd.length;
+      } else {
+        senderAvatar.isVip = true;
+        senderAvatar.isFanClub = true;
+        senderAvatar.wings = true;
+        senderAvatar.setMessage('Joined Fan Club! 🧡');
+      }
+
+      senderAvatar.growAvatar(20);
+      triggerAudioVolumeBoost();
+      triggerFanClubStageEffect();
+      showFanClubAlert(senderName);
+    }
+
+    function triggerGiftEvent(giftName, coinValue, senderName) {
+      state.rankings[senderName] = (state.rankings[senderName] || 0) + coinValue;
+      updateRankingUI();
+
+      let senderAvatar = state.crowd.find(a => a.username === senderName);
+      if (!senderAvatar) {
+        senderAvatar = new Avatar3D(senderName, true, `Gift ${giftName}!`);
+        state.crowd.push(senderAvatar);
+        document.getElementById('crowdCount').innerText = state.crowd.length;
+      } else {
+        senderAvatar.isVip = true;
+        senderAvatar.wings = true;
+        senderAvatar.setMessage(`Gift ${giftName}!`);
+      }
+
+      senderAvatar.growAvatar(coinValue);
+      triggerAudioVolumeBoost();
+
+      showGiftAlert(giftName, coinValue, senderName);
+
+      if (coinValue >= 10) activateBassDrop(3000);
+      else if (coinValue >= 100) activateBassDrop(6000);
+    }
+
+    function updateRankingUI() {
+      const container = document.getElementById('rankingList');
+      const sorted = Object.entries(state.rankings).sort((a, b) => b[1] - a[1]);
+
+      if (sorted.length === 0) return;
+
+      container.innerHTML = '';
+      sorted.slice(0, 5).forEach(([user, score], index) => {
+        const medalColors = ['text-yellow-400', 'text-slate-300', 'text-amber-600', 'text-pink-400', 'text-cyan-400'];
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center py-0.5 border-b border-white/5';
+        row.innerHTML = `
+          <span class="truncate max-w-[100px]"><b class="${medalColors[index] || 'text-slate-400'}">#${index + 1}</b> ${user}</span>
+          <span class="font-bold text-yellow-300">${score} pts</span>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function activateBassDrop(durationMs) {
+      state.isBassDrop = true;
+      state.bpm = 160;
+      document.getElementById('bpmDisplay').innerText = '160 BPM (BASS DROP!)';
+      document.getElementById('bpmDisplay').classList.add('text-pink-500', 'animate-ping');
+      
+      const djAvatar = document.getElementById('djAvatar');
+      djAvatar.classList.add('dj-drop-active');
+
+      if (state.bassDropTimer) clearTimeout(state.bassDropTimer);
+
+      state.bassDropTimer = setTimeout(() => {
+        state.isBassDrop = false;
+        state.bpm = 128;
+        document.getElementById('bpmDisplay').innerText = '128 BPM';
+        document.getElementById('bpmDisplay').classList.remove('text-pink-500', 'animate-ping');
+        djAvatar.classList.remove('dj-drop-active');
+      }, durationMs);
+    }
+
+    function showGiftAlert(giftName, coinValue, senderName) {
+      const container = document.getElementById('giftAlertContainer');
+      const alertBox = document.createElement('div');
+      alertBox.className = 'gift-pop glass-card border border-yellow-400/80 p-2 rounded-xl flex items-center space-x-2 shadow-[0_0_20px_rgba(250,204,21,0.5)] text-fluid-body';
+      
+      alertBox.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-400 to-pink-500 flex items-center justify-center text-xs shadow">
+          <i class="fa-solid fa-gift text-black animate-bounce"></i>
+        </div>
+        <div>
+          <div class="text-[9px] text-yellow-300 font-bold uppercase tracking-wider">MOMENT HADIAH!</div>
+          <div class="font-extrabold text-white text-[10px]"><span class="text-cyan-300">${senderName}</span>: <span class="text-pink-400">${giftName}</span></div>
+        </div>
+        <div class="pl-1.5 border-l border-white/20 text-yellow-400 font-orbitron font-black text-xs">
+          x${coinValue}
+        </div>
+      `;
+
+      container.appendChild(alertBox);
+      setTimeout(() => alertBox.remove(), 3600);
+    }
+
+    function showFanClubAlert(senderName) {
+      const container = document.getElementById('giftAlertContainer');
+      const alertBox = document.createElement('div');
+      alertBox.className = 'gift-pop glass-card border border-orange-500/90 p-2 rounded-xl flex items-center space-x-2 shadow-[0_0_25px_rgba(249,115,22,0.7)] text-fluid-body';
+      
+      alertBox.innerHTML = `
+        <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-xs shadow">
+          <i class="fa-solid fa-heart text-white animate-pulse"></i>
+        </div>
+        <div>
+          <div class="text-[9px] text-orange-300 font-bold uppercase tracking-wider">AHLI FAN CLUB BAHARU!</div>
+          <div class="font-extrabold text-white text-[10px]"><span class="text-amber-300">${senderName}</span> menyertai Fan Club! 🧡</div>
+        </div>
+      `;
+
+      container.appendChild(alertBox);
+      setTimeout(() => alertBox.remove(), 3800);
+    }
+
+    /* ==========================================================================
+       7. TIMERS & SIMULATION HANDLERS
+       ========================================================================== */
+    function startTimer() {
+      setInterval(() => {
+        if (state.gameTimerSeconds > 0) {
+          state.gameTimerSeconds--;
+          const m = Math.floor(state.gameTimerSeconds / 60).toString().padStart(2, '0');
+          const s = (state.gameTimerSeconds % 60).toString().padStart(2, '0');
+          document.getElementById('hourlyTimer').innerText = `${m}:${s}`;
+        } else {
+          state.gameTimerSeconds = 3600;
+          state.rankings = {};
+          updateRankingUI();
+        }
+      }, 1000);
+    }
+
+    function submitSimChat() {
+      const user = document.getElementById('simUsername').value || 'Penari_Guest';
+      const msg = document.getElementById('simChatMessage').value || '1';
+      handleUserChat(user, msg);
+    }
+
+    function quickSendChat(msg) {
+      document.getElementById('simChatMessage').value = msg;
+      const randomUser = 'Penari_' + Math.floor(Math.random() * 899 + 100);
+      handleUserChat(randomUser, msg);
+    }
+
+    function triggerGiftSim(giftName, cost) {
+      const user = document.getElementById('simUsername').value || 'Sultan_Bar';
+      triggerGiftEvent(giftName, cost, user);
+    }
+
+    function triggerOrangeHeartSim() {
+      const user = document.getElementById('simUsername').value || 'Fan_Host';
+      triggerOrangeHeartEvent(user);
+    }
+
+    function buildDeckVisualizer() {
+      const container = document.getElementById('deckVisualizer');
+      const topBarContainer = document.getElementById('topEqualizer');
+      container.innerHTML = '';
+      topBarContainer.innerHTML = '';
+
+      for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'w-1 bg-gradient-to-t from-cyan-500 to-pink-500 rounded-t transition-all duration-75';
+        bar.style.height = '20%';
+        container.appendChild(bar);
+      }
+
+      for (let i = 0; i < 26; i++) {
+        const topBar = document.createElement('div');
+        topBar.className = 'w-1 bg-gradient-to-b from-purple-500/40 to-transparent rounded-b';
+        topBar.style.height = '10%';
+        topBarContainer.appendChild(topBar);
+      }
+
+      setInterval(() => {
+        Array.from(container.children).forEach(bar => {
+          const h = (state.isBassDrop || state.fanClubActive) ? Math.random() * 85 + 15 : Math.random() * 50 + 10;
+          bar.style.height = `${h}%`;
+        });
+        Array.from(topBarContainer.children).forEach(bar => {
+          const h = (state.isBassDrop || state.fanClubActive) ? Math.random() * 90 + 10 : Math.random() * 40 + 5;
+          bar.style.height = `${h}%`;
+        });
+      }, 100);
+    }
+
+    /* ==========================================================================
+       8. START GAME INITIALIZATION
+       ========================================================================== */
+    function startGame() {
+      document.getElementById('startScreen').classList.add('hidden');
+      initAudioEngine();
+      startSynthLoop();
+      startTimer();
+
+      // Penonton Awal
+      handleUserChat('DJ_Bar_Host', 'Party Mula!');
+      handleUserChat('Syafiq_Dance', '1');
+      handleUserChat('Aina_Disco', '1');
+    }
+
+    window.onload = function() {
+      drawLasers();
+      drawCrowd();
+      buildDeckVisualizer();
+    };
+  </script>
+</body>
+</html>
