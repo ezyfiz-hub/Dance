@@ -107,7 +107,7 @@
     }
   </style>
 </head>
-<body class="w-full h-full relative text-white overflow-hidden select-none">
+<body class="w-full h-full relative text-white overflow-hidden select-none" onclick="enableAudioOnUserInteraction()">
 
   <!-- LAPISAN CANVAS EFEK PENTAS & PENONTON -->
   <canvas id="laserCanvas"></canvas>
@@ -197,7 +197,7 @@
       <div class="glass-card p-1.5 md:p-2.5 rounded-xl border border-yellow-500/40 pointer-events-auto w-[48vw] max-w-[240px] flex flex-col gap-0.5 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
         <div class="flex justify-between items-center text-[10px] md:text-xs font-bold text-yellow-400 border-b border-white/10 pb-0.5">
           <span><i class="fa-solid fa-trophy mr-1 text-amber-400"></i> TOP RANKING</span>
-          <span class="text-[9px] text-slate-400 font-mono">HOURLY</span>
+          <span class="text-[9px] text-slate-400 font-mono" id="tikfinityStatusText">TikFinity: Connected</span>
         </div>
         
         <!-- Senarai Ranking -->
@@ -242,7 +242,7 @@
         
         <!-- Ruang Input Sembang / Taip "1" -->
         <div class="flex gap-1.5">
-          <input type="text" id="simUsername" placeholder="Nama User" value="Penari_Guest" class="w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] md:text-xs text-cyan-300 focus:outline-none focus:border-cyan-400">
+          <input type="text" id="simUsername" placeholder="Nama User" value="ezyfiz" class="w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] md:text-xs text-cyan-300 focus:outline-none focus:border-cyan-400">
           <input type="text" id="simChatMessage" placeholder="Taip 1 atau mesej..." value="1" class="w-2/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] md:text-xs text-white focus:outline-none focus:border-pink-500">
           <button onclick="submitSimChat()" class="bg-gradient-to-r from-pink-600 to-purple-600 hover:brightness-110 px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-xs shadow text-white transition active:scale-95 flex items-center justify-center min-w-[40px]">
             <i class="fa-solid fa-paper-plane"></i>
@@ -279,43 +279,6 @@
         </div>
 
       </div>
-
-    </div>
-  </div>
-
-  <!-- SKRIN PEMBUKAAN (START OVERLAY) -->
-  <div id="startScreen" class="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-3 text-center">
-    <div class="max-w-sm w-full glass-card p-4 rounded-2xl border border-pink-500/40 shadow-[0_0_30px_rgba(236,72,153,0.3)] space-y-3">
-      
-      <!-- Logo / Tajuk Game -->
-      <div class="space-y-0.5">
-        <div class="inline-block px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-orbitron text-[9px] tracking-widest border border-pink-500/40">
-          INTERACTIVE TIKTOK LIVE GAME
-        </div>
-        <h1 class="text-fluid-title font-orbitron font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 tracking-wider">
-          YOUR DANCE FLOOR
-        </h1>
-        <p class="text-fluid-sub text-cyan-300 font-bold uppercase tracking-widest">
-          GIFT MORE DANCE MORE
-        </p>
-      </div>
-
-      <!-- Arahan Ringkas -->
-      <div class="bg-slate-900/80 p-2.5 rounded-xl border border-white/10 text-fluid-body text-slate-300 text-left space-y-1.5">
-        <div class="font-bold text-white flex items-center text-[11px]">
-          <i class="fa-solid fa-circle-info mr-1.5 text-cyan-400"></i> Arahan Permainan:
-        </div>
-        <ul class="list-disc list-inside space-y-0.5 text-slate-400 text-[10px]">
-          <li>Taip <b class="text-pink-400">"1"</b> di chat untuk masuk & menari di hadapan DJ.</li>
-          <li>Hantar <b class="text-orange-400">LOVE OREN</b> untuk lencana VIP dengan tulisan <b>"VIP"</b> pada badan avatar!</li>
-          <li><b>RAMAI PENONTON & GIFTER:</b> Semua penonton kekal sehingga <b>25-30 MINIT</b> tanpa dikurangkan!</li>
-        </ul>
-      </div>
-
-      <!-- Butang Mula Permainan -->
-      <button onclick="startGame()" class="w-full py-2.5 bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 rounded-xl font-orbitron font-black text-fluid-sub text-white shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:scale-105 active:scale-95 transition">
-        <i class="fa-solid fa-play mr-1.5"></i> MULA PERMAINAN
-      </button>
 
     </div>
   </div>
@@ -382,6 +345,13 @@
       }
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
+      }
+    }
+
+    function enableAudioOnUserInteraction() {
+      initAudioEngine();
+      if (state.audioMode === 'mp3' && html5Audio.src && html5Audio.paused && state.audioPowered) {
+        html5Audio.play().catch(e => console.log(e));
       }
     }
 
@@ -564,7 +534,7 @@
     }
 
     /* ========================================================================
-       5. AVATAR 3D CROWD SYSTEM (Kekal 25 - 30 Minit & Ramai Penonton)
+       5. AVATAR 3D CROWD SYSTEM
        ======================================================================== */
     class Avatar3D {
       constructor(username, isVip = false, initialMessage = "", isFanClub = false) {
@@ -600,7 +570,6 @@
         this.messageTimer = 180;
       }
 
-      // Pembesaran & Pengecilan Bertahap (25 HINGGA 30 MINIT)
       growAvatar(coinValue) {
         const growthStep = Math.min(22, Math.max(5, coinValue * 0.12));
         this.targetSize = Math.min(68, this.targetSize + growthStep);
@@ -611,7 +580,7 @@
         if (this.shrinkTimer) clearTimeout(this.shrinkTimer);
         if (this.shrinkInterval) clearInterval(this.shrinkInterval);
 
-        // Tempoh pengekalan saiz besar: 25 Minit (1,500,000 ms) hingga 30 Minit (1,800,000 ms)
+        // Tempoh pengekalan saiz besar: 25 Minit hingga 30 Minit
         const holdDuration = Math.floor(Math.random() * 300000) + 1500000; 
 
         this.shrinkTimer = setTimeout(() => {
@@ -635,7 +604,7 @@
             if (!needsDecay) {
               clearInterval(this.shrinkInterval);
             }
-          }, 500); // mengecil perlahan setiap 0.5 saat
+          }, 500);
         }, holdDuration);
       }
 
@@ -798,7 +767,6 @@
       }
     }
 
-    // Isih kedalaman supaya avatar yang lebih dekat dilukis di atas (Mampu menampung sehingga 250 orang)
     function drawCrowd() {
       crowdCtx.clearRect(0, 0, crowdCanvas.width, crowdCanvas.height);
       
@@ -812,13 +780,12 @@
     }
 
     /* ==========================================================================
-       6. CHAT, GIFT, FAN CLUB & RANKING HANDLERS
+       6. CHAT, GIFT, FAN CLUB & TIKFINITY INTEGRATION
        ========================================================================== */
     function handleUserChat(username, message) {
       let avatar = state.crowd.find(a => a.username.toLowerCase() === username.toLowerCase());
 
       if (!avatar) {
-        // Ditingkatkan ke 250 orang maksimum tanpa kerap mengurangkan penonton
         if (state.crowd.length > 250) state.crowd.shift();
         avatar = new Avatar3D(username, false, message);
         state.crowd.push(avatar);
@@ -956,6 +923,39 @@
       setTimeout(() => alertBox.remove(), 3800);
     }
 
+    /* SAMBUNGAN AUTOMATIK WEBSOCKET TIKFINITY STUDIO */
+    function setupTikFinityWebSocket() {
+      const socketPort = '21213';
+      try {
+        const ws = new WebSocket(`ws://localhost:${socketPort}/ws`);
+        
+        ws.onopen = () => {
+          document.getElementById('tikfinityStatusText').innerText = 'TikFinity: Connected';
+          document.getElementById('tikfinityStatusText').className = 'text-[9px] text-emerald-400 font-mono font-bold';
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          
+          if (data.event === 'gift') {
+            triggerGiftEvent(data.giftName || 'Gift', data.diamondCount || 1, data.uniqueId || 'Gifter');
+          } 
+          else if (data.event === 'chat') {
+            handleUserChat(data.uniqueId || 'Guest', data.comment || '');
+          }
+          else if (data.event === 'envelope' || data.event === 'fan_club' || data.giftName === 'Orange Heart') {
+            triggerOrangeHeartEvent(data.uniqueId || 'Fan');
+          }
+        };
+
+        ws.onerror = () => {
+          document.getElementById('tikfinityStatusText').innerText = 'TikFinity: Simulation Mode';
+        };
+      } catch (e) {
+        console.log("WebSocket TikFinity tidak ditemui. Mod simulasi aktif.");
+      }
+    }
+
     /* ==========================================================================
        7. TIMERS & SIMULATION HANDLERS
        ========================================================================== */
@@ -975,7 +975,7 @@
     }
 
     function submitSimChat() {
-      const user = document.getElementById('simUsername').value || 'Penari_Guest';
+      const user = document.getElementById('simUsername').value || 'ezyfiz';
       const msg = document.getElementById('simChatMessage').value || '1';
       handleUserChat(user, msg);
     }
@@ -1029,13 +1029,13 @@
     }
 
     /* ==========================================================================
-       8. START GAME INITIALIZATION
+       8. START GAME AUTOMATICALLY
        ========================================================================== */
-    function startGame() {
-      document.getElementById('startScreen').classList.add('hidden');
+    function autoStartGame() {
       initAudioEngine();
       startSynthLoop();
       startTimer();
+      setupTikFinityWebSocket();
 
       // Penonton Awal
       handleUserChat('DJ_Bar_Host', 'Party Mula!');
@@ -1047,6 +1047,7 @@
       drawLasers();
       drawCrowd();
       buildDeckVisualizer();
+      autoStartGame();
     };
   </script>
 </body>
